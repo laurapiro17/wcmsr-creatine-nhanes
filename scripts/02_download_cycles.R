@@ -54,6 +54,34 @@ for (cyc_id in names(cycles)) {
 # --- 5. Build harmonized adults table per cycle ---
 phq_items <- paste0("DPQ0", c("10","20","30","40","50","60","70","80","90"))
 
+# Common antidepressant generic names (lowercase) for string match against RXDDRUG
+antidep_names <- c(
+  "fluoxetine","sertraline","citalopram","escitalopram","paroxetine","fluvoxamine",
+  "venlafaxine","duloxetine","desvenlafaxine","levomilnacipran",
+  "bupropion","mirtazapine","trazodone","vilazodone","vortioxetine","nefazodone",
+  "amitriptyline","nortriptyline","imipramine","desipramine","clomipramine","doxepin","trimipramine","protriptyline",
+  "phenelzine","tranylcypromine","selegiline","isocarboxazid"
+)
+anxiolytic_names <- c(
+  "alprazolam","lorazepam","diazepam","clonazepam","oxazepam","temazepam",
+  "buspirone","hydroxyzine"
+)
+
+# Collapse RXQ_RX to one row per SEQN
+summarize_rx <- function(rx) {
+  if (is.null(rx)) return(NULL)
+  rx %>%
+    mutate(drug = tolower(as.character(RXDDRUG))) %>%
+    group_by(SEQN) %>%
+    summarise(
+      n_meds      = sum(!is.na(drug) & drug != ""),
+      has_antidep = any(drug %in% antidep_names, na.rm = TRUE),
+      has_anxio   = any(drug %in% anxiolytic_names, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    mutate(has_antidep_or_anxio = has_antidep | has_anxio)
+}
+
 build_adults <- function(cyc_id, cyc_data) {
   if (is.null(cyc_data$DEMO) || is.null(cyc_data$DPQ)) return(NULL)
 
@@ -75,11 +103,21 @@ build_adults <- function(cyc_id, cyc_data) {
   a$depressed <- a$phq9 >= 10
   a$cycle <- cyc_id
 
-  # Attach covariates (left join, keep all adults)
-  for (cov in c("BMX", "SMQ", "PAQ", "HUQ", "RXQ_RX")) {
+  # Single-row covariates first
+  for (cov in c("BMX", "SMQ", "PAQ", "HUQ")) {
     if (!is.null(cyc_data[[cov]])) {
       a <- left_join(a, cyc_data[[cov]], by = "SEQN", suffix = c("", paste0(".", cov)))
     }
+  }
+
+  # Multi-row RXQ_RX: collapse first
+  rx_summary <- summarize_rx(cyc_data$RXQ_RX)
+  if (!is.null(rx_summary)) {
+    a <- left_join(a, rx_summary, by = "SEQN")
+    a$has_antidep[is.na(a$has_antidep)] <- FALSE
+    a$has_anxio[is.na(a$has_anxio)] <- FALSE
+    a$has_antidep_or_anxio[is.na(a$has_antidep_or_anxio)] <- FALSE
+    a$n_meds[is.na(a$n_meds)] <- 0
   }
   a
 }
