@@ -78,6 +78,19 @@ cre_all <- bind_rows(
   cre_1720 %>% mutate(cycle = "2017-Mar2020")
 )
 
+# Diagnostic: verify keys match before join
+cat("\n=== Pre-join diagnostics ===\n")
+cat("adults SEQN class:", class(adults$SEQN), "| range:", range(adults$SEQN), "\n")
+cat("cre_all SEQN class:", class(cre_all$SEQN), "| range:", range(cre_all$SEQN), "\n")
+cat("adults unique cycle values:", paste(unique(adults$cycle), collapse=" | "), "\n")
+cat("cre_all unique cycle values:", paste(unique(cre_all$cycle), collapse=" | "), "\n")
+cat("SEQN intersection size:",
+    length(intersect(adults$SEQN, cre_all$SEQN)), "\n")
+
+# Coerce SEQN to integer on both sides to avoid type mismatch
+adults$SEQN  <- as.integer(adults$SEQN)
+cre_all$SEQN <- as.integer(cre_all$SEQN)
+
 adults_cre <- adults %>% left_join(cre_all, by = c("SEQN","cycle"))
 
 cat("\n=== Merge result ===\n")
@@ -85,6 +98,10 @@ cat("Adults total:", nrow(adults_cre), "\n")
 cat("With creatine value:", sum(!is.na(adults_cre$creatine_g)), "\n")
 cat("With creatine + valid PHQ-9:",
     sum(!is.na(adults_cre$creatine_g) & !is.na(adults_cre$phq9)), "\n")
+
+if (sum(!is.na(adults_cre$creatine_g)) == 0) {
+  stop("Merge failed - no creatine values mapped to adults. Check diagnostics above.")
+}
 
 # --- 4. Smoke test: replicate Bakian quartile pattern (univariate) ---
 analytic <- adults_cre %>% filter(!is.na(creatine_g), !is.na(phq9))
