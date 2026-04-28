@@ -91,7 +91,10 @@ cat("SEQN intersection size:",
 adults$SEQN  <- as.integer(adults$SEQN)
 cre_all$SEQN <- as.integer(cre_all$SEQN)
 
-adults_cre <- adults %>% left_join(cre_all, by = c("SEQN","cycle"))
+# Cycle labels differ between adults (H/I/P) and cre_all (2013-2014/...).
+# SEQN is unique across NHANES cycles, so join on SEQN alone is safe.
+cre_all_for_join <- cre_all %>% select(SEQN, animal_oz, creatine_g)
+adults_cre <- adults %>% left_join(cre_all_for_join, by = "SEQN")
 
 cat("\n=== Merge result ===\n")
 cat("Adults total:", nrow(adults_cre), "\n")
