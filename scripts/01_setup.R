@@ -64,6 +64,7 @@ cat("Crude prevalence:",
 # Expected: ~8.6% per Vahratian 2020 — sanity check.
 
 # --- 5. Save raw cache ---
+dir.create("data/raw", recursive = TRUE, showWarnings = FALSE)
 saveRDS(list(demo = demo_p, dpq = dpq_p,
              dr1 = dr1tot_p, dr2 = dr2tot_p),
         "data/raw/nhanes_p_2017_mar2020.rds")
