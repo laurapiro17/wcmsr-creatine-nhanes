@@ -38,8 +38,21 @@ adults <- demo_p %>%
   filter(RIDAGEYR >= 20) %>%
   inner_join(dpq_p, by = "SEQN")
 
-# PHQ-9 = sum of DPQ010..DPQ090, score ≥10 = depression
+# Diagnostic: what types are the DPQ columns?
 phq_items <- paste0("DPQ0", c("10","20","30","40","50","60","70","80","90"))
+cat("\nDPQ column classes:\n")
+print(sapply(adults[, phq_items], class))
+cat("\nDPQ010 first 5 values:", head(adults$DPQ010, 5), "\n")
+
+# Defensive coerce: factor/char -> numeric; 7=Refused, 9=Don't know -> NA
+for (col in phq_items) {
+  v <- adults[[col]]
+  if (is.factor(v)) v <- as.character(v)
+  v <- suppressWarnings(as.numeric(v))
+  v[v %in% c(7, 9)] <- NA
+  adults[[col]] <- v
+}
+
 adults$phq9 <- rowSums(adults[, phq_items], na.rm = FALSE)
 adults$depressed <- adults$phq9 >= 10
 
