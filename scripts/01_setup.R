@@ -22,10 +22,10 @@ library(haven)
 
 cat("Downloading NHANES 2017-March 2020 pre-pandemic core files...\n")
 
-demo_p   <- nhanes("P_DEMO")    # demographics + survey weights
-dpq_p    <- nhanes("P_DPQ")     # PHQ-9 depression
-dr1tot_p <- nhanes("P_DR1TOT")  # day 1 dietary recall (totals)
-dr2tot_p <- nhanes("P_DR2TOT")  # day 2 dietary recall (totals)
+demo_p   <- nhanes("P_DEMO")                      # demographics + survey weights
+dpq_p    <- nhanes("P_DPQ", translated = FALSE)   # PHQ-9 raw codes 0-3
+dr1tot_p <- nhanes("P_DR1TOT")                    # day 1 dietary totals
+dr2tot_p <- nhanes("P_DR2TOT")                    # day 2 dietary totals
 
 cat("Sample sizes:\n")
 cat("  DEMO   :", nrow(demo_p), "\n")
