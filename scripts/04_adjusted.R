@@ -134,16 +134,62 @@ m_crude_w <- svyglm(depressed ~ creatine_q,
 cat("\n=== Crude WEIGHTED OR (no covariates) ===\n")
 print(round(exp(cbind(OR = coef(m_crude_w), confint(m_crude_w))), 3))
 
-# --- 7. Adjusted weighted logistic ---
-m_adj <- svyglm(depressed ~ creatine_q + age + sex + race + income +
-                  bmi + smoke + pa_active + healthcare + antidep + cycle,
-                design = des, family = quasibinomial())
+# --- 7. Diagnostic: factor levels and NA counts in analytic ---
+cat("\n=== Covariate diagnostics ===\n")
+diag_vars <- c("creatine_q","age","sex","race","income","bmi",
+               "smoke","pa_active","healthcare","antidep","cycle")
+for (v in diag_vars) {
+  x <- analytic[[v]]
+  if (is.null(x)) { cat(sprintf("  %-12s : MISSING column\n", v)); next }
+  if (is.factor(x) || is.character(x)) {
+    cat(sprintf("  %-12s : levels=%s | NA=%d\n", v,
+                paste(unique(na.omit(x)), collapse=","),
+                sum(is.na(x))))
+  } else {
+    cat(sprintf("  %-12s : numeric range=[%g,%g] | NA=%d\n", v,
+                min(x, na.rm=TRUE), max(x, na.rm=TRUE), sum(is.na(x))))
+  }
+}
 
-cat("\n=== ADJUSTED WEIGHTED OR (Bakian-style covariates) ===\n")
-adj_tab <- round(exp(cbind(OR = coef(m_adj), confint(m_adj))), 3)
-print(adj_tab[grep("creatine_q", rownames(adj_tab)), ])
+# Drop zero-weight rows (svyglm chokes)
+analytic2 <- analytic[analytic$wt_combined > 0 & !is.na(analytic$wt_combined), ]
+cat("\nAfter dropping zero-weight rows:", nrow(analytic2), "\n")
 
-cat("\nBakian Q4-vs-Q1 AOR: 0.68 (CI 0.52-0.88)\n")
+des2 <- svydesign(ids = ~SDMVPSU, strata = ~SDMVSTRA,
+                  weights = ~wt_combined, data = analytic2, nest = TRUE)
+
+# --- 8. Stepwise adjusted model ---
+cat("\n=== Stepwise adjustment (each row = added covariate) ===\n")
+formulas <- list(
+  m1 = depressed ~ creatine_q + age + sex,
+  m2 = depressed ~ creatine_q + age + sex + race + income,
+  m3 = depressed ~ creatine_q + age + sex + race + income + bmi + smoke,
+  m4 = depressed ~ creatine_q + age + sex + race + income + bmi + smoke +
+                   pa_active + healthcare,
+  m5 = depressed ~ creatine_q + age + sex + race + income + bmi + smoke +
+                   pa_active + healthcare + antidep + cycle
+)
+results <- list()
+for (nm in names(formulas)) {
+  fit <- tryCatch(svyglm(formulas[[nm]], design = des2, family = quasibinomial()),
+                  error = function(e) {
+                    cat("  ", nm, "FAILED:", conditionMessage(e), "\n"); NULL
+                  })
+  if (!is.null(fit)) {
+    co <- coef(fit); ci <- confint(fit)
+    q4_idx <- grep("creatine_qQ4", names(co))
+    if (length(q4_idx)) {
+      OR <- exp(co[q4_idx]); CI <- exp(ci[q4_idx, ])
+      cat(sprintf("  %s : Q4-vs-Q1 AOR = %.3f (%.3f - %.3f)\n",
+                  nm, OR, CI[1], CI[2]))
+      results[[nm]] <- list(OR = OR, CI = CI, fit = fit)
+    }
+  }
+}
+
+cat("\nBakian Q4-vs-Q1 AOR ref: 0.68 (CI 0.52-0.88)\n")
+m_adj <- results[[length(results)]]$fit
+adj_tab <- if (!is.null(m_adj)) round(exp(cbind(OR = coef(m_adj), confint(m_adj))), 3) else NULL
 
 # --- 8. Save model objects for Day 5 (splines) ---
 saveRDS(list(analytic = analytic, design = des,
