@@ -104,19 +104,36 @@ cat("\n=== Analytic sample size (complete-case, with weights+PSU+strata) ===\n")
 cat(nrow(analytic), "\n")
 
 # --- 4. Recode covariates ---
+# nhanesA returns translated labels ("Yes"/"No","Male"/"Female") not numeric codes.
+# Match strings, not numbers.
+yes_no <- function(x) {
+  as.integer(grepl("^yes", as.character(x), ignore.case = TRUE))
+}
 analytic <- analytic %>%
   mutate(
     age       = as.numeric(RIDAGEYR),
-    sex       = factor(RIAGENDR, levels = c(1,2), labels = c("Male","Female")),
-    race      = factor(RIDRETH1),
+    sex       = factor(as.character(RIAGENDR)),
+    race      = factor(as.character(RIDRETH1)),
     income    = as.numeric(INDFMPIR),
     bmi       = as.numeric(BMXBMI),
-    smoke     = ifelse(SMQ020 == 1, 1, 0),       # 1 = smoked ≥100 cig
-    pa_active = ifelse(!is.na(PAQ605) & PAQ605 == 1, 1, 0),
-    healthcare= ifelse(!is.na(HUQ030) & HUQ030 == 1, 1, 0),
+    smoke     = yes_no(SMQ020),       # smoked ≥100 cig in life
+    pa_active = yes_no(PAQ605),       # vigorous work activity
+    healthcare= yes_no(HUQ030),       # has routine place for healthcare
     antidep   = as.integer(has_antidep_or_anxio | has_antidep | has_anxio),
     cycle     = factor(cycle)
   )
+
+cat("\n=== Recoded covariate sanity check ===\n")
+cat("sex levels:", paste(levels(analytic$sex), collapse=","), "\n")
+cat("race levels:", paste(levels(analytic$race), collapse=","), "\n")
+cat("smoke 1s:", sum(analytic$smoke==1, na.rm=TRUE),
+    "/ 0s:", sum(analytic$smoke==0, na.rm=TRUE), "\n")
+cat("pa_active 1s:", sum(analytic$pa_active==1, na.rm=TRUE),
+    "/ 0s:", sum(analytic$pa_active==0, na.rm=TRUE), "\n")
+cat("healthcare 1s:", sum(analytic$healthcare==1, na.rm=TRUE),
+    "/ 0s:", sum(analytic$healthcare==0, na.rm=TRUE), "\n")
+cat("antidep 1s:", sum(analytic$antidep==1, na.rm=TRUE),
+    "/ 0s:", sum(analytic$antidep==0, na.rm=TRUE), "\n")
 
 # --- 5. Survey design ---
 des <- svydesign(
