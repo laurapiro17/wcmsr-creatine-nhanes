@@ -35,29 +35,54 @@ inv <- list(
 )
 for (k in names(inv)) cat(sprintf("  %-12s : %s\n", k, paste(inv[[k]], collapse=", ")))
 
-# --- 2. Construct combined weight ---
+# --- 2. Fetch dietary survey weights (not in DEMO; live in DR1TOT) ---
+library(nhanesA)
+cat("\nFetching dietary weights from DR1TOT files...\n")
+
+get_weights <- function(table, wt_col) {
+  d <- nhanes(table)
+  if (!"SEQN" %in% names(d)) return(NULL)
+  if (!wt_col %in% names(d)) {
+    cat("  WARNING:", wt_col, "not found in", table, "\n")
+    return(NULL)
+  }
+  d[, c("SEQN", wt_col)] %>% setNames(c("SEQN", "wt_orig"))
+}
+
+w_H <- get_weights("DR1TOT_H", "WTDR2D")
+w_I <- get_weights("DR1TOT_I", "WTDR2D")
+# Pre-pandemic uses WTDRD1PP and WTDR2DPP — try both names
+w_P <- tryCatch(get_weights("P_DR1TOT", "WTDR2DPP"),
+                error = function(e) get_weights("P_DR1TOT", "WTDRD1PP"))
+
+# Fall back: scan column names if not found
+if (is.null(w_P)) {
+  d <- nhanes("P_DR1TOT")
+  cat("P_DR1TOT weight columns available:",
+      paste(grep("^WT", names(d), value = TRUE), collapse=", "), "\n")
+  # Use whichever exists (prefer 2-day, fallback 1-day)
+  for (cand in c("WTDR2DPP","WTDRD1PP","WTDR2D","WTDRD1")) {
+    if (cand %in% names(d)) {
+      w_P <- d[, c("SEQN", cand)] %>% setNames(c("SEQN","wt_orig"))
+      cat("Using", cand, "as P-cycle weight.\n"); break
+    }
+  }
+}
+
+w_all <- bind_rows(
+  w_H %>% mutate(cycle_letter = "H"),
+  w_I %>% mutate(cycle_letter = "I"),
+  w_P %>% mutate(cycle_letter = "P")
+)
+w_all$SEQN <- as.integer(w_all$SEQN)
+a$SEQN <- as.integer(a$SEQN)
+
+a <- a %>% left_join(w_all %>% select(SEQN, wt_orig), by = "SEQN")
+
+# --- 2b. Construct combined weight ---
 # Cycle years: 2013-14 = 2y, 2015-16 = 2y, 2017-March 2020 = 3.2y
-# Total = 7.2y
-# adults$cycle is "H" / "I" / "P"
 total_years <- 2 + 2 + 3.2
 a$cycle_years <- c(H = 2, I = 2, P = 3.2)[a$cycle]
-
-# Pick the appropriate weight per cycle.
-# 2013-14, 2015-16: WTDR2D (2-day dietary weight)
-# 2017-March 2020: WTDR2DPP (pre-pandemic adjusted dietary weight)
-a$wt_orig <- ifelse(a$cycle == "P",
-                    a[["WTDR2DPP"]] %||% NA_real_,
-                    a[["WTDR2D"]]   %||% NA_real_)
-
-# fallback if `%||%` not defined
-`%||%` <- function(x, y) if (is.null(x)) y else x
-
-# Try again robustly
-get_col <- function(df, col) if (col %in% names(df)) df[[col]] else NA_real_
-a$wt_2day <- get_col(a, "WTDR2D")
-a$wt_pp   <- get_col(a, "WTDR2DPP")
-a$wt_orig <- ifelse(a$cycle == "P", a$wt_pp, a$wt_2day)
-
 a$wt_combined <- a$wt_orig * a$cycle_years / total_years
 
 cat("\n=== Combined weight summary ===\n")
