@@ -37,49 +37,39 @@ cat(sprintf("  AOR per 0.1 g/day creatine = %.3f (%.3f - %.3f) | p=%.4f\n",
             co["I(creatine_g * 10)", "Pr(>|t|)"]))
 
 # ============================================================
-# 2. RESTRICTED CUBIC SPLINES (3 knots, dose-response curve)
+# 2. RESTRICTED CUBIC SPLINES (3 knots) — pre-compute basis columns
 # ============================================================
 cat("\n=== 2. Restricted cubic splines (3 knots) ===\n")
-# 3 knots at 25th, 50th, 75th percentiles (Harrell convention)
 knots <- quantile(analytic2$creatine_g,
                   probs = c(0.10, 0.50, 0.90), na.rm = TRUE)
 cat("Knots at:", round(knots, 3), "\n")
 
-m_rcs <- svyglm(depressed ~ ns(creatine_g, knots = knots[2:length(knots)],
-                                Boundary.knots = knots[c(1, length(knots))]) +
+# Pre-compute spline basis as columns in analytic2, then re-create design
+spline_mat <- splines::ns(analytic2$creatine_g,
+                          knots = knots[2],
+                          Boundary.knots = knots[c(1, 3)])
+colnames(spline_mat) <- c("cre_ns1","cre_ns2")
+analytic2 <- cbind(analytic2, as.data.frame(spline_mat))
+
+des2 <- svydesign(ids = ~SDMVPSU, strata = ~SDMVSTRA,
+                  weights = ~wt_combined, data = analytic2, nest = TRUE)
+
+m_rcs <- svyglm(depressed ~ cre_ns1 + cre_ns2 +
                   age + sex + race + income + bmi + smoke + pa_active +
                   healthcare + antidep + cycle,
                 design = des2, family = quasibinomial())
 
-# Test for non-linearity: compare to linear model with anova
-m_lin <- svyglm(depressed ~ creatine_g + age + sex + race + income +
-                  bmi + smoke + pa_active + healthcare + antidep + cycle,
-                design = des2, family = quasibinomial())
-
-# Use likelihood ratio-style test via anova on survey objects
-nl_test <- tryCatch(anova(m_lin, m_rcs, method = "Wald"),
+# Test for non-linearity: compare linear vs spline (Wald on cre_ns2 != 0)
+nl_test <- tryCatch(regTermTest(m_rcs, ~ cre_ns2),
                     error = function(e) NULL)
 if (!is.null(nl_test)) {
-  cat("Non-linearity test (Wald):\n"); print(nl_test)
+  cat("Non-linearity test (cre_ns2 = 0):\n"); print(nl_test)
 }
 
-# Predict on a grid for plotting later
-grid <- data.frame(creatine_g = seq(0, quantile(analytic2$creatine_g, 0.99,
-                                                na.rm=TRUE), length.out = 50))
-# Fill other covariates with median/mode
-for (v in c("age","income","bmi")) grid[[v]] <- median(analytic2[[v]], na.rm=TRUE)
-grid$sex <- factor("Female", levels = levels(analytic2$sex))
-grid$race <- factor(levels(analytic2$race)[1], levels = levels(analytic2$race))
-for (v in c("smoke","pa_active","healthcare","antidep")) grid[[v]] <- 0
-grid$cycle <- factor("P", levels = levels(analytic2$cycle))
-
-pr <- predict(m_rcs, newdata = grid, type = "response", se.fit = TRUE)
-grid$prob <- pr
-grid$se   <- attr(pr, "var") |> sqrt() |> as.numeric()
-saveRDS(grid, "data/processed/spline_predictions.rds")
-cat("\nSpline predictions saved (data/processed/spline_predictions.rds)\n")
-cat("Predicted depression prob across creatine range:\n")
-print(grid[c(1, 12, 25, 38, 50), c("creatine_g","prob")])
+# Print spline coefficients
+cat("Spline term coefficients (link scale):\n")
+co <- summary(m_rcs)$coefficients
+print(round(co[c("cre_ns1","cre_ns2"), ], 4))
 
 # ============================================================
 # 3. INTERACTION: creatine × antidepressant/anxiolytic use
