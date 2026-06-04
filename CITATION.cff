@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+title: "Dietary Creatine Intake and Depression Risk in NHANES 2013-March 2020: a Dose-Response Re-analysis"
+authors:
+  - family-names: "Piñero Roig"
+    given-names: "Laura"
+    orcid: "https://orcid.org/0009-0008-3390-4029"
+    affiliation: "Universitat de Barcelona, Faculty of Medicine"
+abstract: >-
+  Secondary analysis of NHANES 2013-March 2020 extending Bakian et al.
+  2020 on dietary creatine intake and depression risk. Adds a
+  dose-response model based on restricted cubic splines and a formal
+  interaction test with antidepressant medication use, implemented in
+  R with the survey package. Abstract submitted to the 5th IJMS World
+  Conference of Medical Student Research, July 2026.
+repository-code: "https://github.com/laurapiro17/wcmsr-creatine-nhanes"
+license: MIT
+keywords:
+  - NHANES
+  - nutritional epidemiology
+  - depression
+  - creatine
+  - restricted cubic splines
+  - survey statistics
+  - clinical research
+date-released: 2026-04-29
