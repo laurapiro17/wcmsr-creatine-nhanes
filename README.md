@@ -1,48 +1,85 @@
-# WCMSR 2026 — Creatine & Depression in NHANES
+# Dietary creatine and depression risk in NHANES 2013–March 2020
 
-**Conference**: 5th IJMS World Conference of Medical Student Research (virtual, 11-12 Jul 2026)
-**Abstract deadline**: 10 May 2026
-**Fee**: $40 USD (PayPal @editorijms)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/status-under%20peer%20review-orange)](#status)
+[![R](https://img.shields.io/badge/R-survey%20%C2%B7%20rms-blue)](#methods)
 
-## Question
-Does dietary creatine intake remain inversely associated with depression risk in U.S. adults using post-Bakian NHANES cycles (2013–March 2020), and what is the dose-response shape and interaction with antidepressant medication?
+Secondary analysis of NHANES extending Bakian et al. 2020 with a post-2013 US cohort, a dose-response model based on restricted cubic splines, and a formal interaction test with antidepressant medication use.
 
-## Precedent
-- Bakian et al. 2020 *Translational Psychiatry* — NHANES 2005-2012, N=22,692, AOR 0.68 (Q4 vs Q1).
-- Ostojic et al. 2025 *Nutritional Neuroscience* — KNHANES 2022 Korean cohort, quartiles only, no medication interaction.
+## Research question
 
-## Novelty (3 angles)
-1. Post-Bakian US cohort (2013–March 2020), ~15-20K participants combining 3 cycles.
-2. Restricted cubic splines for dose-response (vs Bakian's quartiles).
-3. Formal interaction test with antidepressant/anxiolytic use (Ostojic flagged this as a limitation).
+Does dietary creatine intake remain inversely associated with depression risk in US adults across NHANES cycles 2013–March 2020, and how is this association modified by antidepressant medication use?
 
-## Cycles
-- 2013-2014 (suffix `_H`)
-- 2015-2016 (suffix `_I`)
-- 2017-March 2020 pre-pandemic (prefix `P_`)
+## Background
 
-## Files needed per cycle
-| File | Purpose |
+Bakian et al. 2020 (*Translational Psychiatry*) reported an inverse association between dietary creatine intake and PHQ-9 depression risk in NHANES 2005–2012 (N = 22,692; AOR 0.68, Q4 vs Q1). Ostojic et al. 2025 (*Nutritional Neuroscience*) extended this to a Korean cohort (KNHANES 2022) using quartiles, and flagged the lack of a formal interaction test with antidepressant medication as a key limitation.
+
+## Contribution
+
+Three angles where this analysis extends the prior work:
+
+1. **Post-Bakian US cohort** — three NHANES cycles (2013–March 2020), ≈15,000–20,000 adults, fully independent of the 2005–2012 sample used by Bakian.
+2. **Dose-response shape** — restricted cubic splines (`rms::rcs`, 4 knots) instead of quartile cut-offs, allowing detection of threshold, plateau or U-shape patterns invisible to a Q4 vs Q1 contrast.
+3. **Antidepressant interaction** — formal multiplicative interaction test between dietary creatine and prescription antidepressant or anxiolytic use, addressing the gap explicitly flagged by Ostojic et al. 2025.
+
+## Data
+
+NHANES public-release files, three cycles:
+
+| Cycle | File suffix |
 |---|---|
-| `DEMO` | age, sex, race, income, weights |
-| `DR1TOT` + `DR2TOT` | dietary recall day 1 & 2 |
-| `DPQ` | PHQ-9 depression screener |
-| `RXQ_RX` | prescription medications (antidepressant flag) |
-| `BMX` | BMI |
-| `SMQ` | smoking |
-| `PAQ` | physical activity |
-| `HUQ` | healthcare access |
+| 2013–2014 | `_H` |
+| 2015–2016 | `_I` |
+| 2017–March 2020 (pre-pandemic) | `P_` |
 
-## Creatine calculation (Bakian)
-Creatine intake = sum across food items of (food gram weight × creatine content per gram). Creatine content per food code from FNDDS + ad-hoc lookup table for meat/fish.
+Per-cycle files: `DEMO` (demographics + survey weights), `DR1TOT` and `DR2TOT` (24-hour dietary recall, days 1 and 2), `DPQ` (PHQ-9), `RXQ_RX` (prescription medications), `BMX` (BMI), `SMQ` (smoking), `PAQ` (physical activity), `HUQ` (healthcare access). Pulled via the `nhanesA` R package.
 
-## Schedule (28 Apr → 10 May)
-| Day | Task |
-|---|---|
-| 1-2 | Setup R env + download all NHANES files |
-| 3 | Combine cycles + construct survey weights `WTSAF` |
-| 4-5 | Replicate Bakian quartile analysis as smoke test |
-| 6-7 | Restricted cubic splines dose-response |
-| 8-9 | Interaction test medication × creatine |
-| 10-11 | Write abstract (250-300 words) + sensitivity |
-| 12 | AI-audit + cross-check + submit ($40 PayPal) |
+## Methods
+
+- **Creatine intake** — derived from FPED animal-protein categories (`PF_MPE` = Meat + Poultry + Eggs as primary proxy; sensitivity definitions add seafood from `PF_SSNS` at 30% and 50% shares), converted to grams of creatine using Bakian's average of 0.11 g per oz-equivalent (≈ 3.88 mg per g of animal protein). Methodology details in [`refs/creatine_methodology.md`](refs/creatine_methodology.md).
+- **Outcome** — depression defined as PHQ-9 ≥ 10 (moderate-to-severe).
+- **Main model** — survey-weighted logistic regression (`survey::svyglm`) with restricted cubic splines on creatine intake. Adjustment set follows Bakian 2020: age, sex, race/ethnicity, income-to-poverty ratio, education, BMI, smoking, physical activity, healthcare access.
+- **Interaction test** — multiplicative interaction term between creatine and antidepressant/anxiolytic use, design-corrected Wald test.
+- **Sex stratification** — pre-specified, motivated by Bakian's larger effect estimate in females.
+- **Survey design** — combined-cycle weights per NCHS guidance (`weight × cycle_years / total_years`); strata `SDMVSTRA`, clusters `SDMVPSU`.
+- **Sensitivity analyses** — four creatine-intake definitions and alternative covariate sets (`scripts/06_sensitivity.R`).
+
+## Repository structure
+
+```
+scripts/
+  01_setup.R               Package install + first-cycle smoke test
+  02_download_cycles.R     NHANES 2013-14, 2015-16, 2017-Mar 2020 + covariates
+  03_creatine.R            FPED → creatine intake derivation
+  04_adjusted.R            Survey-weighted logistic regression (Bakian replication)
+  05_splines_interaction.R Restricted cubic splines + medication interaction
+  06_sensitivity.R         4 creatine definitions, education-adjusted models
+
+refs/
+  creatine_methodology.md  Per-food creatine content, Bakian 2020 derivation
+
+POSIT_CLOUD_SETUP.md       Reproducibility on Posit Cloud Free (no local R needed)
+CITATION.cff               Machine-readable citation metadata
+```
+
+## Status
+
+Abstract submitted to the **5th IJMS World Conference of Medical Student Research** (virtual, 11–12 July 2026). Currently under peer review.
+
+## Reproducibility
+
+End-to-end re-run from raw NHANES files:
+
+1. Clone the repository.
+2. Open `scripts/01_setup.R` in R (≥ 4.3) or Posit Cloud — installs `nhanesA`, `survey`, `rms`, `dplyr`, `tidyr`, `ggplot2`, `splines`, `mgcv`, `broom`, `haven`.
+3. Run scripts in numbered order. Expected sample sizes after `01_setup.R` are documented in [`POSIT_CLOUD_SETUP.md`](POSIT_CLOUD_SETUP.md).
+
+## Citation
+
+Use the *Cite this repository* button on the GitHub sidebar (auto-generated from `CITATION.cff`), or:
+
+> Piñero Roig, L. (2026). *Dietary Creatine Intake and Depression Risk in NHANES 2013–March 2020: a Dose-Response Re-analysis.* GitHub repository, https://github.com/laurapiro17/wcmsr-creatine-nhanes
+
+## License
+
+MIT — see [LICENSE](LICENSE).
