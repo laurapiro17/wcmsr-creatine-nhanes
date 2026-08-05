@@ -1,7 +1,7 @@
 # Dietary creatine and depression risk in NHANES 2013–March 2020
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/status-under%20peer%20review-orange)](#status)
+[![Status](https://img.shields.io/badge/abstract-in%20press-brightgreen)](#status)
 [![R](https://img.shields.io/badge/R-survey%20%C2%B7%20rms-blue)](#methods)
 
 Secondary analysis of NHANES extending Bakian et al. 2020 with a post-2013 US cohort, a dose-response model based on restricted cubic splines, and a formal interaction test with antidepressant medication use.
@@ -68,7 +68,10 @@ CITATION.cff               Machine-readable citation metadata
 
 ## Status
 
-Abstract submitted to the **5th IJMS World Conference of Medical Student Research** (virtual, 11–12 July 2026). Currently under peer review.
+The abstract was accepted for oral presentation (Original Research) at the 5th IJMS
+World Conference of Medical Student Research, held virtually on 11–12 July 2026, and
+is in press for the conference supplement of the *International Journal of Medical
+Students*.
 
 ## Reproducibility
 

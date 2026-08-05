@@ -11,8 +11,8 @@ abstract: >-
   2020 on dietary creatine intake and depression risk. Adds a
   dose-response model based on restricted cubic splines and a formal
   interaction test with antidepressant medication use, implemented in
-  R with the survey package. Abstract submitted to the 5th IJMS World
-  Conference of Medical Student Research, July 2026.
+  R with the survey package. Presented as an oral communication at the
+  5th IJMS World Conference of Medical Student Research, July 2026.
 repository-code: "https://github.com/laurapiro17/wcmsr-creatine-nhanes"
 license: MIT
 keywords:
