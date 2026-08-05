@@ -8,7 +8,7 @@
 
 **Source**: extensive literature review, key reference Balsom et al. 1994 *Sports Medicine*.
 
-**Conversion**: 1 oz = 28.3495 g. So 0.11 g/oz = 3.88 mg/g. ✓
+**Conversion**: 1 oz = 28.3495 g, so 0.11 g/oz = 3.88 mg/g.
 
 ## Foods INCLUDED (MyPyramid / FPED categories)
 
@@ -40,7 +40,9 @@
 | Fish high n-3 (e.g., herring) | 5.65 | Bakian Table S1 upper bound |
 | **AVERAGE (Bakian)** | **3.88** | Bakian 2020 |
 
-⚠️ Note: cooked values lower than raw. NHANES dietary recall captures consumed foods (i.e., usually cooked) — Bakian applied 3.88 g/kg average regardless. We replicate.
+Cooked values are lower than raw. NHANES dietary recall captures foods as consumed,
+i.e. usually cooked, but Bakian applied the 3.88 g/kg average regardless. Replicated
+here for comparability.
 
 ## Computation per participant
 
@@ -63,11 +65,12 @@ If our quartile cutoffs differ wildly from these in the post-Bakian cohort, that
 
 Smith-Ryan et al. 2021 (PMC8498075) — used the 3.88 g/kg Bakian coefficient in NHANES 2017-2018 for older adults (≥65, N=1,221) for cardiovascular/metabolic outcomes (NOT depression). Confirms methodology transferable to modern cycles.
 
-## Outstanding questions
+## Decisions taken
 
-1. Do we need Bakian's Supplementary Tables S1/S2 for per-food precision, or is the 3.88 g/kg blanket sufficient?
-   - Answer: Smith-Ryan 2021 used blanket 3.88 → blanket is acceptable.
-2. Do we exclude supplement users (NHANES dietary supplements file DSQ)?
-   - Bakian: yes, sensitivity analysis. We should too.
-3. FPED vs MPED in 2013-2014 cycle?
-   - 2013-2014 has FPED 2013-2014 release. Use that.
+- **Blanket coefficient instead of per-food values.** Bakian's Supplementary Tables
+  S1/S2 would allow per-food precision, but Smith-Ryan 2021 applied the blanket
+  3.88 g/kg to modern cycles, so the blanket coefficient is used here.
+- **Supplement users.** Excluded in a sensitivity analysis, as in Bakian
+  (NHANES dietary supplements file, DSQ).
+- **FPED vs MPED in 2013-2014.** The 2013-2014 cycle has its own FPED release,
+  which is the one used.

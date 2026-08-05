@@ -1,27 +1,19 @@
-# Posit Cloud Setup — 5 minuts
+# Running the analysis on Posit Cloud
 
-## Pas 1 — Crear compte (1 min)
-1. Vés a **https://posit.cloud/**
-2. Sign Up amb el teu compte de GitHub (laurapiro17)
-3. Tria **Cloud Free** (25h/mes, suficient per 12 dies)
+No local R installation is needed. Posit Cloud Free (25 h/month) covers the whole
+pipeline; peak memory stays under 1 GB.
 
-## Pas 2 — Crear projecte (1 min)
-1. Botó **New Project** → **New RStudio Project**
-2. Nom: `wcmsr-creatine-nhanes`
-3. Espera ~30s a que arrenqui
+## Setup
 
-## Pas 3 — Pujar fitxers (1 min)
-A la pestanya **Files** (panel inferior dret):
-1. Click **Upload**
-2. Puja: `~/Projects/wcmsr-creatine-nhanes/scripts/01_setup.R`
-3. Crea carpeta `data/raw/` (botó **New Folder** dos cops)
+1. Create a project at https://posit.cloud/ (**New Project** → **New RStudio Project**).
+2. Upload `scripts/01_setup.R` from the **Files** pane.
+3. Create the folder `data/raw/`.
+4. Open `01_setup.R` and click **Source** (`Cmd+Shift+S`). Package installation plus
+   the first NHANES download takes about 3 minutes.
 
-## Pas 4 — Executar setup (~3 min)
-1. Obre `01_setup.R` al panel superior esquerre
-2. Click **Source** (botó dalt a la dreta del panel) o `Cmd+Shift+S`
-3. Espera la instal·lació de paquets + download
+Then run the remaining scripts in numbered order.
 
-## Què hauries de veure
+## Expected output of `01_setup.R`
 
 ```
 Sample sizes:
@@ -30,13 +22,18 @@ Sample sizes:
   DR1TOT : ~14300
   DR2TOT : ~12000
 
-Adults ≥20 with valid PHQ-9: ~5000
-Depression cases (PHQ-9 ≥ 10): ~430
+Adults >=20 with valid PHQ-9: ~5000
+Depression cases (PHQ-9 >= 10): ~430
 Crude prevalence: ~8.6%
 ```
 
-Si surt **~8-9% prevalence** → metodologia OK. Si no, em dius el número i debuguem.
+A crude prevalence of 8-9% is consistent with Vahratian et al. 2020 and indicates
+the PHQ-9 recode is working. A markedly different figure points to a coding error
+in the DPQ block rather than to a real finding.
 
-## Si tens problemes
-- `nhanesA` falla: prova `install.packages("nhanesA", repos="https://cloud.r-project.org")`
-- Memory issue Posit Cloud free: tanca altres projectes; aquest no hauria de passar de 1GB RAM
+## Troubleshooting
+
+- If `nhanesA` fails to install:
+  `install.packages("nhanesA", repos = "https://cloud.r-project.org")`
+- NHANES servers occasionally time out. Re-running the download block is safe:
+  files are cached under `data/raw/`.

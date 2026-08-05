@@ -16,11 +16,15 @@ Bakian et al. 2020 (*Translational Psychiatry*) reported an inverse association 
 
 ## Contribution
 
-Three angles where this analysis extends the prior work:
+This analysis extends the prior work in three ways.
 
-1. **Post-Bakian US cohort** — three NHANES cycles (2013–March 2020), ≈15,000–20,000 adults, fully independent of the 2005–2012 sample used by Bakian.
-2. **Dose-response shape** — restricted cubic splines (`rms::rcs`, 4 knots) instead of quartile cut-offs, allowing detection of threshold, plateau or U-shape patterns invisible to a Q4 vs Q1 contrast.
-3. **Antidepressant interaction** — formal multiplicative interaction test between dietary creatine and prescription antidepressant or anxiolytic use, addressing the gap explicitly flagged by Ostojic et al. 2025.
+It draws on three NHANES cycles (2013–March 2020, roughly 15,000–20,000 adults),
+fully independent of the 2005–2012 sample analysed by Bakian. It models the
+dose-response with restricted cubic splines (`rms::rcs`, 4 knots) rather than
+quartile cut-offs, so threshold, plateau or U-shaped patterns that a Q4 vs Q1
+contrast cannot show become visible. And it tests the multiplicative interaction
+between dietary creatine and prescription antidepressant or anxiolytic use, which
+is the gap Ostojic et al. 2025 flagged.
 
 ## Data
 
@@ -36,13 +40,13 @@ Per-cycle files: `DEMO` (demographics + survey weights), `DR1TOT` and `DR2TOT` (
 
 ## Methods
 
-- **Creatine intake** — derived from FPED animal-protein categories (`PF_MPE` = Meat + Poultry + Eggs as primary proxy; sensitivity definitions add seafood from `PF_SSNS` at 30% and 50% shares), converted to grams of creatine using Bakian's average of 0.11 g per oz-equivalent (≈ 3.88 mg per g of animal protein). Methodology details in [`refs/creatine_methodology.md`](refs/creatine_methodology.md).
-- **Outcome** — depression defined as PHQ-9 ≥ 10 (moderate-to-severe).
-- **Main model** — survey-weighted logistic regression (`survey::svyglm`) with restricted cubic splines on creatine intake. Adjustment set follows Bakian 2020: age, sex, race/ethnicity, income-to-poverty ratio, education, BMI, smoking, physical activity, healthcare access.
-- **Interaction test** — multiplicative interaction term between creatine and antidepressant/anxiolytic use, design-corrected Wald test.
-- **Sex stratification** — pre-specified, motivated by Bakian's larger effect estimate in females.
-- **Survey design** — combined-cycle weights per NCHS guidance (`weight × cycle_years / total_years`); strata `SDMVSTRA`, clusters `SDMVPSU`.
-- **Sensitivity analyses** — four creatine-intake definitions and alternative covariate sets (`scripts/06_sensitivity.R`).
+- Creatine intake is derived from FPED animal-protein categories (`PF_MPE`, Meat + Poultry + Eggs, as the primary proxy; sensitivity definitions add seafood from `PF_SSNS` at 30% and 50% shares) and converted to grams of creatine using Bakian's average of 0.11 g per oz-equivalent, i.e. 3.88 mg per g of animal protein. Details in [`refs/creatine_methodology.md`](refs/creatine_methodology.md).
+- Depression is defined as PHQ-9 ≥ 10 (moderate-to-severe).
+- The main model is a survey-weighted logistic regression (`survey::svyglm`) with restricted cubic splines on creatine intake. The adjustment set follows Bakian 2020: age, sex, race/ethnicity, income-to-poverty ratio, education, BMI, smoking, physical activity, healthcare access.
+- The interaction test uses a multiplicative term between creatine and antidepressant or anxiolytic use, assessed with a design-corrected Wald test.
+- Sex stratification was pre-specified, motivated by the larger effect estimate Bakian reported in females.
+- Combined-cycle weights follow NCHS guidance (`weight × cycle_years / total_years`), with strata `SDMVSTRA` and clusters `SDMVPSU`.
+- Sensitivity analyses cover four creatine-intake definitions and alternative covariate sets (`scripts/06_sensitivity.R`).
 
 ## Repository structure
 
