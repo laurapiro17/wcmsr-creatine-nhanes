@@ -1,10 +1,10 @@
 # ============================================================
 # WCMSR Creatine-Depression NHANES — Day 5b (sensitivity)
 # 4 definitions of dietary animal protein → creatine
-#   A. PF_MPE only (current main analysis)
-#   B. PF_MPE + 0.30 × PF_SSNS (US-avg ~30% of SSNS is seafood)
-#   C. PF_MPE + (PFSEAPLANTLEG - PF_LEGUMES) (animal+plant)
-#   D. PF_MPE + 0.50 × PF_SSNS (high-seafood-share scenario)
+#   A. MPE only (current main analysis)
+#   B. MPE + 0.30 × PF_SSNS (US-avg ~30% of SSNS is seafood)
+#   C. MPE + (PFSEAPLANTLEG - PF_LEGUMES) (animal+plant)
+#   D. MPE + 0.50 × PF_SSNS (high-seafood-share scenario)
 # Add education to covariates (Bakian had it; we missed it).
 # Run for each: adjusted Q4 vs Q1, continuous, 20-39 stratum.
 # ============================================================
@@ -26,13 +26,14 @@ mean_oz <- function(df, cols) {
 }
 
 build_animal <- function(df, defn) {
-  d1 <- intersect(c("DR1_PF_MPE","DR1_PF_SSNS","DR1_PFSEAPLANTLEG","DR1T_PF_LEGUMES"), names(df))
-  d2 <- intersect(c("DR2_PF_MPE","DR2_PF_SSNS","DR2_PFSEAPLANTLEG","DR2T_PF_LEGUMES"), names(df))
+  d1 <- intersect(c("DR1_PFALLPROTLEG","DR1_PF_SSNS","DR1_PFSEAPLANTLEG","DR1T_PF_LEGUMES"), names(df))
+  d2 <- intersect(c("DR2_PFALLPROTLEG","DR2_PF_SSNS","DR2_PFSEAPLANTLEG","DR2T_PF_LEGUMES"), names(df))
   for (c in c(d1,d2)) df[[c]] <- as.numeric(df[[c]])
 
-  mpe   <- (df$DR1_PF_MPE + df$DR2_PF_MPE) / 2
   ssns  <- (df$DR1_PF_SSNS + df$DR2_PF_SSNS) / 2
   seapl <- (df$DR1_PFSEAPLANTLEG + df$DR2_PFSEAPLANTLEG) / 2
+  # MPE = meat + poultry + eggs. heiscore's PF_MPE omits poultry, so rebuild it.
+  mpe   <- (df$DR1_PFALLPROTLEG + df$DR2_PFALLPROTLEG) / 2 - seapl
   legs  <- (df$DR1T_PF_LEGUMES + df$DR2T_PF_LEGUMES) / 2
 
   switch(defn,

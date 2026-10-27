@@ -6,6 +6,21 @@
 
 Secondary analysis of NHANES extending Bakian et al. 2020 to a post-2013 US cohort. The inverse association between dietary creatine intake and depression replicates — but only once seafood is counted as a source of creatine, a choice every study in this area makes and none states. A spline dose-response model and a formal interaction test with antidepressant medication use are reported alongside it.
 
+## Erratum (October 2026)
+
+The exposure in the published abstract was built on `PF_MPE` from the `heiscore.data` package. Despite its name, that variable does not contain poultry: checked against the USDA Food Patterns Equivalents Database, it equals meat + cured meat + organ meat + eggs. Poultry is the largest protein-food component in this population (about 1.47 oz-eq/day), so roughly a third of the intended meat + poultry + eggs exposure was missing, in all four definitions. `scripts/03_creatine.R` and `scripts/06_sensitivity.R` now rebuild meat + poultry + eggs as `PFALLPROTLEG − PFSEAPLANTLEG`. The code as it stood for the abstract is tagged `abstract-as-published`.
+
+Re-running the identical analysis (same covariates, survey design and N = 14,664; PHQ-9 ≥ 10):
+
+| Definition | Q4 vs Q1, published | Q4 vs Q1, corrected | Per 0.1 g/day, published | Per 0.1 g/day, corrected |
+|---|---|---|---|---|
+| A (no seafood) | 0.81 (0.60–1.07) | 0.79 (0.59–1.06) | 0.97 (0.94–1.01), p = 0.11 | 0.98 (0.95–1.01), p = 0.20 |
+| B (closest to Bakian) | 0.72 (0.54–0.95) | **0.75 (0.56–1.01)** | 0.96 (0.93–1.00), p = 0.043 | **0.97 (0.94–1.00), p = 0.099** |
+| C | 0.65 (0.46–0.91) | 0.69 (0.50–0.94) | 0.96 (0.93–0.99), p = 0.014 | 0.97 (0.94–1.00), p = 0.031 |
+| D | 0.67 (0.50–0.91) | 0.70 (0.52–0.94) | 0.96 (0.92–0.99), p = 0.027 | **0.97 (0.94–1.00), p = 0.065** |
+
+Three published estimates are no longer statistically significant (in bold). The 20–39 subgroup estimates move from 0.60–0.72 to 0.64–0.80, non-significant throughout. The direction of the finding, a stronger association when seafood is counted, is unchanged, but the abstract's statement that the association replicates under the definition closest to Bakian's no longer holds. A correction is being requested from the journal.
+
 ## Research question
 
 Does dietary creatine intake remain inversely associated with depression risk in US adults across NHANES cycles 2013–March 2020, and how much does the answer depend on how the exposure is defined?
@@ -23,8 +38,8 @@ fully independent of the 2005–2012 sample analysed by Bakian.
 
 It re-runs the same survey-weighted model under four definitions of what counts as
 dietary creatine, differing only in whether seafood is included and at what share.
-Q4 vs Q1 moves from AOR 0.81 (95% CI 0.60–1.07) with meat, poultry and eggs alone to
-0.72 (0.54–0.95) once seafood enters, close to Bakian's 0.68. The exposure definition
+Q4 vs Q1 moves from AOR 0.79 (95% CI 0.59–1.06) with meat, poultry and eggs alone to
+0.75 (0.56–1.01) once seafood enters, against Bakian's 0.68 (corrected values; see Erratum). The exposure definition
 is doing much of the work, and it is a choice studies in this area make silently.
 
 And it adds two analyses a quartile contrast cannot give: a spline dose-response
@@ -46,7 +61,7 @@ Per-cycle files: `DEMO` (demographics + survey weights), `DR1TOT` and `DR2TOT` (
 
 ## Methods
 
-- Creatine intake is derived from FPED animal-protein categories (`PF_MPE`, Meat + Poultry + Eggs, as the primary proxy; sensitivity definitions add seafood from `PF_SSNS` at 30% and 50% shares) and converted to grams of creatine using Bakian's average of 0.11 g per oz-equivalent, i.e. 3.88 mg per g of animal protein. Details in [`refs/creatine_methodology.md`](refs/creatine_methodology.md).
+- Creatine intake is derived from FPED animal-protein categories (meat + poultry + eggs, rebuilt as `PFALLPROTLEG − PFSEAPLANTLEG` because `PF_MPE` omits poultry, as the primary proxy; sensitivity definitions add seafood from `PF_SSNS` at 30% and 50% shares) and converted to grams of creatine using Bakian's average of 0.11 g per oz-equivalent, i.e. 3.88 mg per g of animal protein. Details in [`refs/creatine_methodology.md`](refs/creatine_methodology.md).
 - Depression is defined as PHQ-9 ≥ 10 (moderate-to-severe).
 - The primary result is a survey-weighted logistic regression (`survey::svyglm`) on creatine quartiles, re-run under each of the four exposure definitions. The adjustment set follows Bakian 2020: age, sex, race/ethnicity, income-to-poverty ratio, education, BMI, smoking, physical activity, healthcare access.
 - The dose-response model uses a restricted cubic spline basis (`splines::ns`, interior knot at the median with boundary knots at the 10th and 90th percentiles of intake), with a design-corrected Wald test for non-linearity.

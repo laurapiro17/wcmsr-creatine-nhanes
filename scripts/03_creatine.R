@@ -1,7 +1,9 @@
 # ============================================================
 # WCMSR Creatine-Depression NHANES — Day 3 (v2)
-# heiscore.data only provides HEI-2020 aggregates (PF_MPE).
-# Use PF_MPE = Meat + Poultry + Eggs as animal protein proxy.
+# heiscore.data only provides HEI-2020 aggregates.
+# Animal protein proxy = Meat + Poultry + Eggs, rebuilt as PFALLPROTLEG - PFSEAPLANTLEG.
+# (PF_MPE is NOT used: despite its name it omits poultry -- it equals
+#  meat + cured meat + organ meat + eggs in FPED. Corrected Oct 2026.)
 # Bakian: 0.11 g creatine per oz_eq of meat/poultry.
 # Limitation: excludes seafood (~15% of US creatine intake).
 # ============================================================
@@ -35,21 +37,24 @@ inspect(fped_1314, "2013-14")
 inspect(fped_1516, "2015-16")
 inspect(fped_1720, "2017-Mar2020")
 
-# --- 2. Compute creatine per person (mean of day 1 + day 2 PF_MPE) ---
+# --- 2. Compute creatine per person (mean of day 1 + day 2 meat+poultry+eggs) ---
 compute_creatine <- function(df, label) {
-  mpe_cols <- grep("PF_MPE", names(df), value = TRUE, ignore.case = TRUE)
-  if (length(mpe_cols) < 1) stop("No PF_MPE columns in ", label)
+  allp_cols  <- grep("PFALLPROTLEG",  names(df), value = TRUE)
+  seapl_cols <- grep("PFSEAPLANTLEG", names(df), value = TRUE)
+  if (length(allp_cols) < 1 || length(allp_cols) != length(seapl_cols))
+    stop("Missing PFALLPROTLEG/PFSEAPLANTLEG columns in ", label)
 
   # Find SEQN col
   seqn_col <- intersect(c("SEQN","seqn"), names(df))[1]
 
   # Subset and coerce to numeric
-  df2 <- df %>% select(all_of(c(seqn_col, mpe_cols))) %>%
+  df2 <- df %>% select(all_of(c(seqn_col, allp_cols, seapl_cols))) %>%
     rename(SEQN = !!seqn_col) %>%
-    mutate(across(all_of(mpe_cols), ~ as.numeric(.)))
+    mutate(across(all_of(c(allp_cols, seapl_cols)), ~ as.numeric(.)))
 
-  # Mean across day 1 and day 2 (NA-aware)
-  df2$animal_oz <- rowMeans(df2[, mpe_cols, drop = FALSE], na.rm = TRUE)
+  # Meat + poultry + eggs per day, then mean across day 1 and day 2 (NA-aware)
+  mpe_days <- as.matrix(df2[, allp_cols]) - as.matrix(df2[, seapl_cols])
+  df2$animal_oz <- rowMeans(mpe_days, na.rm = TRUE)
   df2$animal_oz[is.nan(df2$animal_oz)] <- NA
   df2$creatine_g <- df2$animal_oz * KCREAT_PER_OZ
 
@@ -135,4 +140,4 @@ cat("Crude OR Q4-vs-Q1 expected to be similar or stronger (no adjustment yet).\n
 saveRDS(adults_cre, "data/processed/adults_with_creatine.rds")
 cat("\nSaved data/processed/adults_with_creatine.rds\n")
 cat("\nDay 3 done. Next (Day 4-5): survey weights + adjusted logistic + splines.\n")
-cat("Limitation logged: PF_MPE proxy excludes seafood (~15% of US creatine).\n")
+cat("Limitation logged: meat+poultry+eggs proxy excludes seafood (~15% of US creatine).\n")
